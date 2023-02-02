@@ -3,10 +3,10 @@
 from bs4 import BeautifulSoup
 import requests
 from requests_html import HTMLSession
-
-import asyncio
-import aiohttp
+import concurrent.futures
+import threading
 import time
+
 
 import config
 
@@ -46,11 +46,15 @@ with open("url.txt", "r") as f:
 	for line in f.readlines():
 		info = line.split(";")
 		url_info_map[info[1].strip("\n")] = info[0]
+	
+def download_mp3_with(index):
+	url = url_info_map[index]
+	filename = "data/" + "ih#" + index +"#" + title_map[index] + ".mp3"
+	download_mp3(url,filename)
 
-# print(title_map)
-# print(url_info_map)
+def download_all(indexs): 
+	with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor: 
+		executor.map(download_mp3_with, indexs)
 
-async def download_one(url): async with aiohttp.ClientSession() as session: async with session.get(url) as resp: print('Read {} from {}'.format(resp.content_length, url))async def download_all(sites): tasks = [asyncio.create_task(download_one(site)) for site in sites] await asyncio.gather(*tasks)
-
-for index in title_map:
-	print(index,title_map[index],url_info_map[index])
+all_indexs = title_map.keys() 
+download_all(all_indexs)
